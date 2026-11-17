@@ -45,6 +45,14 @@ export async function reportScore(matchId: string, formData: FormData) {
   });
 }
 
+export async function cancelMatch(matchId: string) {
+  await transition("cancel_match", { p_match: matchId });
+}
+
+export async function releaseTable() {
+  await transition("release_table", {});
+}
+
 export async function confirmScore(matchId: string) {
   await transition("confirm_score", { p_match: matchId });
 }

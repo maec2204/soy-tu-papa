@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
+import { EmptyNote } from "@/components/EmptyState";
 import { MatchRow } from "@/components/MatchRow";
 import { SubmitButton } from "@/components/SubmitButton";
 import { getFatherhoods, getMyId, getPlayers, getRecentMatches } from "@/lib/data";
@@ -20,7 +21,7 @@ function Family({
     <section className="mt-8">
       <h2 className="font-display text-3xl font-semibold">{title}</h2>
       {rows.length === 0 ? (
-        <p className="mt-1 text-linea/70">{empty}</p>
+        <EmptyNote>{empty}</EmptyNote>
       ) : (
         <ul className="mt-1 divide-y divide-linea/15">
           {rows.map(({ player, record }) => (
@@ -91,7 +92,7 @@ export default async function PlayerPage({ params }: PageProps<"/jugador/[id]">)
 
       <Family
         title={own ? "Tus hijos" : "Sus hijos"}
-        empty={own ? "Todavía no eres papá de nadie." : "Todavía no es papá de nadie."}
+        empty={own ? "Todavía no eres papá de nadie. Hacen falta 5 partidos o más contra alguien y 3 victorias de ventaja." : "Todavía no es papá de nadie."}
         rows={children}
       />
       <Family
@@ -103,7 +104,11 @@ export default async function PlayerPage({ params }: PageProps<"/jugador/[id]">)
       <section className="mt-8">
         <h2 className="font-display text-3xl font-semibold">Últimos partidos</h2>
         {matches.length === 0 ? (
-          <p className="mt-1 text-linea/70">Sin partidos confirmados.</p>
+          <EmptyNote>
+            {own
+              ? "Aún no tienes partidos confirmados. Cuentan cuando el rival confirma el marcador."
+              : "Aún no tiene partidos confirmados."}
+          </EmptyNote>
         ) : (
           <ul className="mt-1 divide-y divide-linea/15">
             {matches.map((match) => (

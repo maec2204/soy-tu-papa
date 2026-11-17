@@ -1,11 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ReleaseTable } from "@/components/ReleaseTable";
 import { ScoreForm } from "@/components/ScoreForm";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Table } from "@/components/Table";
-import { getMatch, getMyId, getPlayers } from "@/lib/data";
+import { getMatch, getMyId, getPlayers, getQueue, getTableSince } from "@/lib/data";
 import { teamLabel, teamPlayers } from "@/lib/labels";
-import { acceptMatch, confirmScore, declineMatch, rejectScore } from "@/lib/matches";
+import {
+  acceptMatch,
+  cancelMatch,
+  confirmScore,
+  declineMatch,
+  rejectScore,
+} from "@/lib/matches";
 import { rivalOf, teamOf, winnerOf, type Match, type Team } from "@/lib/types";
 
 const primary =
@@ -65,21 +72,53 @@ export default async function MatchPage({ params }: PageProps<"/partido/[id]">) 
   } else if (match.status === "declined") {
     title = "Reto rechazado";
     body = <p className="mt-6 text-lg text-linea/80">Este partido no se jugó.</p>;
+  } else if (match.status === "cancelled") {
+    title = "Partido cancelado";
+    body = <p className="mt-6 text-lg text-linea/80">Este partido no se jugó.</p>;
   } else if (match.status === "playing") {
-    title = "En juego";
-    if (myTeam) {
-      return (
+    const cancel = myTeam && (
+      <form action={cancelMatch.bind(null, match.id)} className="mt-3">
+        <SubmitButton className={secondary}>Cancelar partido</SubmitButton>
+      </form>
+    );
+    if (match.queue_position) {
+      // La mesa es una sola: este partido espera a los que se aceptaron antes.
+      const [queue, tableSince] = await Promise.all([getQueue(), getTableSince()]);
+      const onTable = queue[0];
+      const releaseAt = new Date(tableSince!.getTime() + 20 * 60_000).toISOString();
+      title = "En cola";
+      body = (
         <>
-          <h1 className="mb-4 font-display text-5xl font-bold">{title}</h1>
-          <ScoreForm
-            matchId={match.id}
-            teamA={teamA}
-            teamB={teamB}
-            labelA={labelA}
-            labelB={labelB}
-          />
+          <p className="mt-6 text-lg">
+            Puesto {match.queue_position} en la cola. Ahora juegan{" "}
+            {teamLabel(onTable, "A", players)} contra {teamLabel(onTable, "B", players)}.
+          </p>
+          <p className="mt-1 text-linea/80">
+            {myTeam
+              ? "Cuando les toque la mesa van a poder cargar el marcador."
+              : "Todavía no les toca la mesa."}
+          </p>
+          {myTeam && <ReleaseTable availableAt={releaseAt} />}
+          {cancel}
         </>
       );
+    } else {
+      title = "En juego";
+      if (myTeam) {
+        return (
+          <>
+            <h1 className="mb-4 font-display text-5xl font-bold">{title}</h1>
+            <ScoreForm
+              matchId={match.id}
+              teamA={teamA}
+              teamB={teamB}
+              labelA={labelA}
+              labelB={labelB}
+            />
+            {cancel}
+          </>
+        );
+      }
     }
   } else if (match.status === "awaiting_confirmation") {
     const reporterTeam = teamOf(match, match.reported_by!)!;

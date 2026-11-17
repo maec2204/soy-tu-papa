@@ -1,6 +1,6 @@
 // Modo demo (NEXT_PUBLIC_MOCK=1): sin Supabase ni cuentas. Un Postgres en memoria
 // ejecuta la migración real, así que las reglas del juego son las mismas de producción.
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { cookies } from "next/headers";
 import { PGlite } from "@electric-sql/pglite";
@@ -30,9 +30,10 @@ async function start(): Promise<PGlite> {
       $$ select nullif(current_setting('mock.uid', true), '')::uuid $$;
     create publication supabase_realtime;
   `);
-  await db.exec(
-    readFileSync(join(process.cwd(), "supabase/migrations/0001_init.sql"), "utf8"),
-  );
+  const migrations = join(process.cwd(), "supabase/migrations");
+  for (const file of readdirSync(migrations).sort()) {
+    await db.exec(readFileSync(join(migrations, file), "utf8"));
+  }
 
   for (const [i, name] of NAMES.entries()) {
     await db.query(`insert into public.allowed_emails values ($1)`, [
@@ -92,6 +93,8 @@ async function start(): Promise<PGlite> {
   await create(DIEGO, ANA);
   await upTo("report", SOFIA, ANA, 11, 8);
   await upTo("accept", ANA, VALENTINA);
+  // Con Ana y Valentina en la mesa, Carla y Luis quedan en cola.
+  await upTo("accept", CARLA, LUIS);
 
   await as("");
   return db;

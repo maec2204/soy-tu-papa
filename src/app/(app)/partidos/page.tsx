@@ -1,3 +1,4 @@
+import { EmptyState } from "@/components/EmptyState";
 import { MatchRow } from "@/components/MatchRow";
 import { OpenMatch } from "@/components/OpenMatches";
 import { getMyId, getMyOpenMatches, getPlayers, getRecentMatches } from "@/lib/data";
@@ -32,9 +33,12 @@ export default async function MatchesPage() {
       <h1 className="font-display text-5xl font-bold">Partidos</h1>
 
       {open.length === 0 && played.length === 0 && (
-        <p className="mt-4 max-w-[30ch] text-lg text-linea/80">
-          Todavía no tienes partidos. Toca Retar para empezar el primero.
-        </p>
+        <EmptyState
+          title="Sin partidos todavía"
+          action={{ href: "/nuevo", label: "Retar a alguien" }}
+        >
+          Tus retos, los partidos en juego y los marcadores por confirmar van a aparecer aquí.
+        </EmptyState>
       )}
 
       {openSection("Te toca", mine)}

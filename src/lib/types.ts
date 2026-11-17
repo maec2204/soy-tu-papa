@@ -5,7 +5,8 @@ export type MatchStatus =
   | "playing"
   | "awaiting_confirmation"
   | "confirmed"
-  | "declined";
+  | "declined"
+  | "cancelled";
 
 export type Player = {
   id: string;
@@ -28,6 +29,10 @@ export type Match = {
   reported_by: string | null;
   rating_delta: number | null;
   confirmed_at: string | null;
+  queued_at: string | null;
+  played_at: string | null;
+  /** 0 = en la mesa, 1 = primero en la cola… null = no ocupa ni espera la mesa. */
+  queue_position: number | null;
   match_players: { team: Team; player_id: string }[];
 };
 
@@ -61,7 +66,8 @@ export function waitsFor(match: Match, playerId: string): boolean {
   const team = teamOf(match, playerId);
   if (!team) return false;
   if (match.status === "invited") return team === "B";
-  if (match.status === "playing") return true;
+  // En cola no hay nada que hacer hasta que toque la mesa.
+  if (match.status === "playing") return !match.queue_position;
   if (match.status === "awaiting_confirmation") {
     return teamOf(match, match.reported_by!) !== team;
   }

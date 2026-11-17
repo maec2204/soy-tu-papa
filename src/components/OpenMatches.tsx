@@ -68,7 +68,9 @@ export function OpenMatch({
   const text =
     match.status === "invited"
       ? `Esperando que ${rivals} acepte el reto`
-      : match.status === "playing"
+      : match.queue_position
+        ? `En cola contra ${rivals}, puesto ${match.queue_position}`
+        : match.status === "playing"
         ? `En juego contra ${rivals}. Carga el marcador al terminar`
         : waitsFor(match, me)
           ? `Confirma el marcador contra ${rivals}`

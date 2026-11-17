@@ -39,14 +39,62 @@ export const getPlayers = cache(async (): Promise<Map<string, Player>> => {
   return new Map((data as Player[]).map((p) => [p.id, p]));
 });
 
+/** La mesa y su cola: partidos aceptados que aún no cargaron marcador, en orden de aceptación. */
+export const getQueue = cache(async (): Promise<Match[]> => {
+  let rows: Match[];
+  if (MOCK) {
+    rows = await mockQuery<Match>(
+      `${MOCK_MATCHES} where m.status = 'playing' and m.played_at is null
+       order by m.queued_at, m.id`,
+    );
+  } else {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("matches")
+      .select(MATCH_COLUMNS)
+      .eq("status", "playing")
+      .is("played_at", null)
+      .order("queued_at")
+      .order("id");
+    rows = data as Match[];
+  }
+  return rows.map((match, index) => ({ ...match, queue_position: index }));
+});
+
+/** Desde cuándo ocupa la mesa el primer partido de la cola. A los 20 minutos se puede liberar. */
+export async function getTableSince(): Promise<Date | null> {
+  const head = (await getQueue())[0];
+  if (!head) return null;
+  let freeSince: string;
+  if (MOCK) {
+    const rows = await mockQuery<{ free_since: string }>(`select free_since from public.mesa`);
+    freeSince = rows[0].free_since;
+  } else {
+    const supabase = await createClient();
+    const { data } = await supabase.from("mesa").select("free_since").single();
+    freeSince = data!.free_since;
+  }
+  return new Date(Math.max(new Date(head.queued_at!).getTime(), new Date(freeSince).getTime()));
+}
+
+async function withQueue(matches: Match[]): Promise<Match[]> {
+  const queue = await getQueue();
+  return matches.map((match) => {
+    const position = queue.findIndex((q) => q.id === match.id);
+    return { ...match, queue_position: position === -1 ? null : position };
+  });
+}
+
 /** Partidos sin terminar en los que juega la persona: retos, en juego y por confirmar. */
 export const getMyOpenMatches = cache(async (): Promise<Match[]> => {
   const me = await getMyId();
   if (MOCK) {
-    return mockQuery<Match>(
-      `${MOCK_MATCHES} where m.status in ('invited', 'playing', 'awaiting_confirmation')
-       and ${MOCK_PLAYS} order by m.created_at desc`,
-      [me],
+    return withQueue(
+      await mockQuery<Match>(
+        `${MOCK_MATCHES} where m.status in ('invited', 'playing', 'awaiting_confirmation')
+         and ${MOCK_PLAYS} order by m.created_at desc`,
+        [me],
+      ),
     );
   }
   const supabase = await createClient();
@@ -55,15 +103,15 @@ export const getMyOpenMatches = cache(async (): Promise<Match[]> => {
     .select(MATCH_COLUMNS)
     .in("status", ["invited", "playing", "awaiting_confirmation"])
     .order("created_at", { ascending: false });
-  return (data as Match[]).filter((m) =>
-    m.match_players.some((p) => p.player_id === me),
+  return withQueue(
+    (data as Match[]).filter((m) => m.match_players.some((p) => p.player_id === me)),
   );
 });
 
 export async function getMatch(id: string): Promise<Match | null> {
   if (MOCK) {
     const rows = await mockQuery<Match>(`${MOCK_MATCHES} where m.id::text = $1`, [id]);
-    return rows[0] ?? null;
+    return rows[0] ? (await withQueue(rows))[0] : null;
   }
   const supabase = await createClient();
   const { data } = await supabase
@@ -71,7 +119,7 @@ export async function getMatch(id: string): Promise<Match | null> {
     .select(MATCH_COLUMNS)
     .eq("id", id)
     .maybeSingle();
-  return data as Match | null;
+  return data ? (await withQueue([data as Match]))[0] : null;
 }
 
 export async function getRecentMatches(playerId: string): Promise<Match[]> {

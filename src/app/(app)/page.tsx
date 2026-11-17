@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
+import { EmptyState } from "@/components/EmptyState";
 import { OpenMatches } from "@/components/OpenMatches";
 import { getMyId, getPlayers } from "@/lib/data";
 
@@ -17,9 +18,13 @@ export default async function RankingPage() {
       <h1 className="font-display text-5xl font-bold">La tabla</h1>
 
       {ranking.length === 0 ? (
-        <p className="mt-4 max-w-[30ch] text-lg text-linea/80">
-          Todavía no hay partidos confirmados. Toca Retar para abrir la tabla.
-        </p>
+        <EmptyState
+          title="La tabla está vacía"
+          action={{ href: "/nuevo", label: "Retar a alguien" }}
+        >
+          Aquí aparece quien tenga un partido confirmado. Juega el primero y quédate con el
+          puesto 1.
+        </EmptyState>
       ) : (
         <ol className="mt-4 divide-y divide-linea/15">
           {ranking.map((player, index) => (

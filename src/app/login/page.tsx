@@ -6,7 +6,8 @@ const field =
   "mt-1 w-full rounded-2xl border-2 border-linea/30 bg-mesa-honda px-4 py-3 text-lg placeholder:text-linea/40";
 
 const ERRORS: Record<string, string> = {
-  entrar: "El correo o la clave no coinciden.",
+  entrar:
+    "El correo o la clave no coinciden. Si nunca has creado tu clave con este correo, toca «Es mi primera vez».",
   crear:
     "No se pudo crear la cuenta. Revisa que tu correo esté en la lista de jugadores y que no tenga ya una clave.",
 };
