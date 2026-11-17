@@ -14,9 +14,7 @@ Estado al 2026-11-17. Lo retoma Pio (`cpiocova`). Las reglas del juego están en
 - Modo demo: `npm run dev:mock`. Un Postgres en memoria (PGlite) ejecuta las mismas migraciones.
   Sirve para ver pantallas y probar reglas sin tocar Supabase. No se pueden correr `dev` y
   `dev:mock` a la vez en la misma carpeta.
-- La base real ya tiene ejecutadas `0001_init.sql` y `0002_queue.sql`.
-  Falta ejecutar `0003_cancel_only_unplayed.sql` (impide cancelar un partido con marcador
-  disputado para borrar una derrota).
+- La base real ya tiene ejecutadas las tres migraciones (`0001`, `0002` y `0003`).
 
 ## Para arrancar en una máquina nueva
 
