@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Soy tu papá
 
-## Getting Started
+La cuenta de los partidos de ping pong de la oficina: partidos 1 contra 1 y 2 contra 2, marcador
+confirmado por los dos lados, tabla por puntos, rachas y quién es papá de quién.
 
-First, run the development server:
+## Reglas
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Un partido es un juego con un marcador. Solo cuenta cuando lo confirma el equipo contrario al que
+  lo cargó. Si responden "No es correcto", el marcador se borra y se vuelve a cargar.
+- La tabla se ordena por puntos (Elo, K = 32, todos arrancan en 1000). Aparece quien tenga al menos
+  un partido confirmado.
+- Papá: 5 o más partidos 1 contra 1 entre dos jugadores y 3 o más victorias de ventaja.
+- El 2 contra 2 mueve los puntos de los cuatro y no cuenta para la paternidad.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Las reglas viven en `supabase/migrations/0001_init.sql`. Las tablas son de solo lectura para los
+usuarios; todo cambio pasa por las funciones de ese archivo.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Modo demo (sin Supabase ni cuentas)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`npm run dev:mock` abre la app con jugadores y partidos de ejemplo. Un Postgres en memoria ejecuta
+la misma migración, así que las reglas son las reales. El selector de arriba cambia de jugador para
+ver los dos lados de un partido. Los datos se reinician al reiniciar el servidor.
 
-## Learn More
+## Entrada
 
-To learn more about Next.js, take a look at the following resources:
+Cada jugador entra con su correo y una clave que crea la primera vez. Solo puede crear cuenta un
+correo que esté en la tabla `allowed_emails`. La lista vive en la base, no en el repositorio.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Puesta en marcha
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Crear un proyecto gratuito en [Supabase](https://supabase.com).
+2. En el SQL Editor, ejecutar `supabase/migrations/0001_init.sql`.
+3. Cargar la lista de jugadores, en minúsculas:
+   `insert into public.allowed_emails values ('ana@empresa.com'), ('luis@empresa.com');`
+4. En Authentication → Providers → Email: dejar Email activo y apagar "Confirm email" (no se envían
+   correos). Dejar apagados el acceso anónimo, por teléfono y los demás proveedores.
+5. Copiar `.env.example` a `.env.local` y llenar la URL y la clave pública del proyecto.
+6. `npm run dev`.
 
-## Deploy on Vercel
+Si alguien olvida su clave o registró el correo de otro, se le pone una clave temporal desde el
+SQL Editor:
+`update auth.users set encrypted_password = extensions.crypt('clave-temporal', extensions.gen_salt('bf')) where email = 'ana@empresa.com';`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Límites del plan gratuito
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Supabase pausa el proyecto tras 1 semana sin actividad; se reactiva a mano desde su panel.
+- Los avisos de reto aparecen con la web abierta. No hay avisos al teléfono con la web cerrada.

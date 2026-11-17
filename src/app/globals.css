@@ -1,26 +1,147 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* La mesa: azul de mesa de ping pong, líneas blancas, pelota naranja, goma roja. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-mesa: #12355b;
+  --color-mesa-clara: #1c4a7c;
+  --color-mesa-honda: #0c2743;
+  --color-linea: #f4f7fb;
+  --color-pelota: #ff8a00;
+  --color-goma: #ff5a5f;
+  --font-sans: var(--font-barlow);
+  --font-display: var(--font-barlow-condensed);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-mesa);
+  color: var(--color-linea);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-pelota);
+  outline-offset: 2px;
+}
+
+/* La red: línea punteada que separa los dos lados de la mesa. */
+.red {
+  border-top: 3px dashed color-mix(in srgb, var(--color-linea) 70%, transparent);
+}
+
+.marcador {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.9;
+}
+
+input.marcador {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+input.marcador::-webkit-outer-spin-button,
+input.marcador::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Movimiento. Corto, solo transform y opacidad, y responde a lo que hace la persona. */
+@keyframes entra {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes aparece {
+  from {
+    opacity: 0;
+  }
+}
+.entra {
+  animation: entra 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.aparece {
+  animation: aparece 200ms ease-out both;
+}
+/* Las filas de una lista entran una tras otra. --i es la posición de la fila. */
+.escalon {
+  animation: entra 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(min(var(--i, 0), 8) * 45ms + 80ms);
+}
+
+/* Todo lo que se toca cede un poco bajo el dedo. */
+button,
+.boton {
+  transition:
+    transform 120ms ease-out,
+    background-color 160ms ease-out,
+    border-color 160ms ease-out,
+    opacity 160ms ease-out;
+}
+button:active:not(:disabled),
+.boton:active {
+  transform: scale(0.96);
+}
+.enviando {
+  opacity: 0.6;
+}
+
+.indicador {
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* La pelota cruza la mesa del lado del ganador al del perdedor cuando el partido quedó confirmado. */
+@keyframes pelota {
+  0% {
+    top: 14%;
+    left: 22%;
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  40% {
+    top: 46%;
+    left: 50%;
+    transform: scale(1.7);
+  }
+  68% {
+    top: 74%;
+    left: 70%;
+    transform: scale(0.9);
+  }
+  100% {
+    top: 96%;
+    left: 88%;
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+.pelota {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--color-pelota);
+  opacity: 0;
+  pointer-events: none;
+  animation: pelota 1100ms cubic-bezier(0.4, 0, 0.6, 1) 350ms both;
+}
+.pelota-vuelve {
+  animation-direction: reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entra,
+  .aparece,
+  .escalon,
+  .pelota {
+    animation: none;
+  }
+  button,
+  .boton,
+  .indicador {
+    transition: none;
+  }
 }
