@@ -76,7 +76,8 @@ export default async function MatchPage({ params }: PageProps<"/partido/[id]">) 
     title = "Partido cancelado";
     body = <p className="mt-6 text-lg text-linea/80">Este partido no se jugó.</p>;
   } else if (match.status === "playing") {
-    const cancel = myTeam && (
+    // Con marcador ya cargado alguna vez no se cancela: se vuelve a cargar y se confirma.
+    const cancel = myTeam && !match.played_at && (
       <form action={cancelMatch.bind(null, match.id)} className="mt-3">
         <SubmitButton className={secondary}>Cancelar partido</SubmitButton>
       </form>
